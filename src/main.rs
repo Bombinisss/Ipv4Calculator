@@ -25,7 +25,7 @@ fn to_binary_string_with_bar(ip: Ipv4Addr, pos: i32) -> String {
 
     for (i, ch) in binary.chars().enumerate() {
         if i == pos as usize {
-            result.push_str(" | ");
+            result.push_str("| ");
         }
         if i % 8 == 0 && i != 0 {
             result.push('.');
@@ -111,9 +111,13 @@ fn main() {
     let network_string = network_address(ipv4, split_pos).0;
     let network_adr = network_address(ipv4, split_pos).1;
     let mask_number = ipv4_to_cidr(mask);
+    let mut broadcast_address_octets = network_adr.octets();
+    broadcast_address_octets[3]=255;
+    let broadcast_address = Ipv4Addr::from(broadcast_address_octets);
     
     println!();
     println!("IPv4 Address: {} ({})", ipv4, to_binary_string_with_bar(ipv4, split_pos));
     println!("Subnet Mask: {} = {} ({})", mask, mask_number, to_binary_string_with_bar(mask, split_pos));
     println!("Network Address: {}/{} ({})", network_adr, mask_number, network_string);
+    println!("Broadcast Address: {} ({})", broadcast_address, to_binary_string_with_bar(broadcast_address, split_pos));
 }
