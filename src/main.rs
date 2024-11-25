@@ -120,4 +120,5 @@ fn main() {
     println!("Subnet Mask: {} = {} ({})", mask, mask_number, to_binary_string_with_bar(mask, split_pos));
     println!("Network Address: {}/{} ({})", network_adr, mask_number, network_string);
     println!("Broadcast Address: {} ({})", broadcast_address, to_binary_string_with_bar(broadcast_address, split_pos));
+    println!("Hosts: {} ", 2_i32.pow((32 - mask_number) as u32) - 2);
 }
