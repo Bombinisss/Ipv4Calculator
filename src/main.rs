@@ -24,7 +24,7 @@ fn to_binary_string_with_bar(ip: Ipv4Addr, pos: i32) -> String {
     let mut result = String::new();
 
     for (i, ch) in binary.chars().enumerate() {
-        if i == pos as usize {
+        if i == pos as usize && pos != 0{
             result.push_str("| ");
         }
         if i % 8 == 0 && i != 0 {
@@ -108,17 +108,30 @@ fn main() {
     };
 
     let split_pos = count_where_0(mask);
-    let network_string = network_address(ipv4, split_pos).0;
-    let network_adr = network_address(ipv4, split_pos).1;
     let mask_number = ipv4_to_cidr(mask);
-    let mut broadcast_address_octets = network_adr.octets();
-    broadcast_address_octets[3]=255;
-    let broadcast_address = Ipv4Addr::from(broadcast_address_octets);
     
     println!();
     println!("IPv4 Address: {} ({})", ipv4, to_binary_string_with_bar(ipv4, split_pos));
     println!("Subnet Mask: {} = {} ({})", mask, mask_number, to_binary_string_with_bar(mask, split_pos));
+    
+    if mask_number == 32 {return;}
+    
+    let network_string = network_address(ipv4, split_pos).0;
+    let network_adr = network_address(ipv4, split_pos).1;
+    let mut broadcast_address_octets = network_adr.octets();
+    broadcast_address_octets[3]=255;
+    let broadcast_address = Ipv4Addr::from(broadcast_address_octets);
+    broadcast_address_octets[3]=1;
+    let host_min = Ipv4Addr::from(broadcast_address_octets);
+    broadcast_address_octets[3]=254;
+    let host_max = Ipv4Addr::from(broadcast_address_octets);
+    
     println!("Network Address: {}/{} ({})", network_adr, mask_number, network_string);
     println!("Broadcast Address: {} ({})", broadcast_address, to_binary_string_with_bar(broadcast_address, split_pos));
     println!("Hosts: {} ", 2_i32.pow((32 - mask_number) as u32) - 2);
+    
+    if mask_number == 31 {return;}
+    
+    println!("Host min: {} ({})", host_min, to_binary_string_with_bar(host_min, split_pos));
+    println!("Host max: {} ({})", host_max, to_binary_string_with_bar(host_max, split_pos));
 }
