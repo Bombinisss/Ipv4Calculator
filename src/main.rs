@@ -22,27 +22,38 @@ fn to_binary_string_with_bar(ip: Ipv4Addr, pos: i32) -> String {
     let bit_ip = ip.to_bits();
     let binary = format!("{:032b}", bit_ip);
     let mut result = String::new();
-        
+
     for (i, ch) in binary.chars().enumerate() {
-        if i % 8 == 0 && i != 0 {
-            result.push('.');
-        }
         if i == pos as usize {
             result.push_str(" | ");
         }
+        if i % 8 == 0 && i != 0 {
+            result.push('.');
+        }
         result.push(ch);
     }
-    
+
     result
 }
 
-fn network_address(ip: Ipv4Addr, pos: i32) -> String {
-    
+fn network_address(ip: Ipv4Addr, pos: i32) -> (String, Ipv4Addr) {
+
     let bit_ip = ip.to_bits();
+    let mask = u32::MAX << (32 - pos);
+    let result = Ipv4Addr::from_bits(bit_ip & mask);
+
+    (to_binary_string_with_bar(result, pos), result)
+}
+
+fn ipv4_to_cidr(ip: Ipv4Addr) -> u8 {
+    let octets = ip.octets();
     
-    let result = Ipv4Addr::from_bits((bit_ip >> pos) & 0xFF);
+    let mut cidr = 0;
+    for &octet in &octets {
+        cidr += octet.count_ones();
+    }
     
-    to_binary_string_with_bar(result, pos)
+    cidr as u8
 }
 
 fn main() {
@@ -97,7 +108,12 @@ fn main() {
     };
 
     let split_pos = count_where_0(mask);
-
+    let network_string = network_address(ipv4, split_pos).0;
+    let network_adr = network_address(ipv4, split_pos).1;
+    let mask_number = ipv4_to_cidr(mask);
+    
+    println!();
     println!("IPv4 Address: {} ({})", ipv4, to_binary_string_with_bar(ipv4, split_pos));
-    println!("Subnet Mask: {} ({})", mask, to_binary_string_with_bar(mask, split_pos));
+    println!("Subnet Mask: {} = {} ({})", mask, mask_number, to_binary_string_with_bar(mask, split_pos));
+    println!("Network Address: {}/{} ({})", network_adr, mask_number, network_string);
 }
