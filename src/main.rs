@@ -2,21 +2,20 @@ use std::io::{self, Write};
 use std::net::Ipv4Addr;
 
 fn count_where_0(ip: Ipv4Addr) -> i32 {
-        let bit_ip = ip.to_bits();
+    let bit_ip = ip.to_bits();
 
-        let binary = format!("{:08b}", bit_ip);
-        let mut position = 0;
+    let binary = format!("{:08b}", bit_ip);
+    let mut position = 0;
 
-        for ch in binary.chars() {
-            if ch == '0' {
-                return position;
-            }
-            else {
-                position += 1;
-            }
+    for ch in binary.chars() {
+        if ch == '0' {
+            return position;
+        } else {
+            position += 1;
         }
-        0
     }
+    0
+}
 
 fn to_binary_string_with_bar(ip: Ipv4Addr, pos: i32) -> String {
     let bit_ip = ip.to_bits();
@@ -24,7 +23,7 @@ fn to_binary_string_with_bar(ip: Ipv4Addr, pos: i32) -> String {
     let mut result = String::new();
 
     for (i, ch) in binary.chars().enumerate() {
-        if i == pos as usize && pos != 0{
+        if i == pos as usize && pos != 0 {
             result.push_str("| ");
         }
         if i % 8 == 0 && i != 0 {
@@ -37,7 +36,6 @@ fn to_binary_string_with_bar(ip: Ipv4Addr, pos: i32) -> String {
 }
 
 fn network_address(ip: Ipv4Addr, pos: i32) -> (String, Ipv4Addr) {
-
     let bit_ip = ip.to_bits();
     let mask = u32::MAX << (32 - pos);
     let result = Ipv4Addr::from_bits(bit_ip & mask);
@@ -47,12 +45,12 @@ fn network_address(ip: Ipv4Addr, pos: i32) -> (String, Ipv4Addr) {
 
 fn ipv4_to_cidr(ip: Ipv4Addr) -> u8 {
     let octets = ip.octets();
-    
+
     let mut cidr = 0;
     for &octet in &octets {
         cidr += octet.count_ones();
     }
-    
+
     cidr as u8
 }
 
@@ -109,29 +107,38 @@ fn main() {
 
     let split_pos = count_where_0(mask);
     let mask_number = ipv4_to_cidr(mask);
-    
+
     println!();
     println!("IPv4 Address: {} ({})", ipv4, to_binary_string_with_bar(ipv4, split_pos));
     println!("Subnet Mask: {} = {} ({})", mask, mask_number, to_binary_string_with_bar(mask, split_pos));
-    
-    if mask_number == 32 {return;}
-    
+
+    if mask_number == 32 { return; }
+
     let network_string = network_address(ipv4, split_pos).0;
     let network_adr = network_address(ipv4, split_pos).1;
+
+    // Calculate broadcast address
     let mut broadcast_address_octets = network_adr.octets();
-    broadcast_address_octets[3]=255;
+    for i in 0..(32 - mask_number) {
+        broadcast_address_octets[3] |= 1 << (7 - i);
+    }
     let broadcast_address = Ipv4Addr::from(broadcast_address_octets);
-    broadcast_address_octets[3]=1;
-    let host_min = Ipv4Addr::from(broadcast_address_octets);
-    broadcast_address_octets[3]=254;
-    let host_max = Ipv4Addr::from(broadcast_address_octets);
-    
+
+    // Calculate host minimum and maximum
+    let mut host_min_octets = network_adr.octets();
+    host_min_octets[3] += 1;
+    let host_min = Ipv4Addr::from(host_min_octets);
+
+    let mut host_max_octets = broadcast_address.octets();
+    host_max_octets[3] -= 1;
+    let host_max = Ipv4Addr::from(host_max_octets);
+
     println!("Network Address: {}/{} ({})", network_adr, mask_number, network_string);
     println!("Broadcast Address: {} ({})", broadcast_address, to_binary_string_with_bar(broadcast_address, split_pos));
-    println!("Hosts: {} ", 2_i32.pow((32 - mask_number) as u32) - 2);
-    
-    if mask_number == 31 {return;}
-    
+    println!("Hosts: {}", 2_i32.pow((32 - mask_number) as u32) - 2);
+
+    if mask_number == 31 { return; }
+
     println!("Host min: {} ({})", host_min, to_binary_string_with_bar(host_min, split_pos));
     println!("Host max: {} ({})", host_max, to_binary_string_with_bar(host_max, split_pos));
 }
